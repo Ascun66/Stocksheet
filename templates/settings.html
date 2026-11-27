@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings – Alt-Soundcircus</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .settings-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem 2.25rem;
+      max-width: 640px;
+      margin: 0 auto 1.5rem;
+    }
+    .settings-box h2 { font-size: 1.15rem; margin-bottom: 0.5rem; }
+    .settings-box .section-desc { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; }
+    .settings-box label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-top: 1.1rem; margin-bottom: 0.35rem; }
+    .settings-box input, .settings-box textarea {
+      width: 100%; padding: 0.7rem 0.9rem; font-size: 1rem;
+      background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px;
+    }
+    .settings-box textarea { min-height: 160px; font-family: inherit; resize: vertical; }
+    .password-wrap { position: relative; display: flex; align-items: center; }
+    .password-wrap input { padding-right: 4.5rem; }
+    .toggle-pass {
+      position: absolute; right: 0.5rem; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text-muted); padding: 0.35rem 0.7rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500; cursor: pointer;
+    }
+    .toggle-pass:hover { background: var(--border); color: var(--text); }
+    .settings-box .actions { margin-top: 1.5rem; display: flex; gap: 0.7rem; flex-wrap: wrap; }
+    .settings-box .actions button { padding: 0.7rem 1.3rem; font-size: 1rem; }
+    .note { font-size: 0.9rem; color: var(--text-muted); margin-top: 1.25rem; line-height: 1.55; }
+    .back { display: inline-block; margin-bottom: 1.5rem; color: var(--accent); text-decoration: none; font-size: 0.95rem; }
+    .status { margin-top: 1rem; padding: 0.8rem 1.1rem; border-radius: 8px; font-size: 0.95rem; display: none; }
+    .status.ok { background: #1a3a2a; color: var(--accent); display: block; }
+    .status.err { background: #3a1a1a; color: var(--danger); display: block; }
+    .par-grid { display: grid; grid-template-columns: 1fr 100px; gap: 0.5rem 1rem; align-items: center; }
+    .par-grid label { margin: 0; color: var(--text); font-size: 0.95rem; }
+    .par-grid input { text-align: right; }
+    header h1 { font-size: 1.9rem; }
+  </style>
+</head>
+<body>
+  <div class="app" id="appRoot">
+    <a href="/" class="back">← Back to Alt-Soundcircus</a>
+    <header>
+      <h1>Settings</h1>
+      <p class="subtitle">Order targets, supplier &amp; email</p>
+    </header>
+
+    <div class="settings-box">
+      <h2>Email (Outlook / Gmail)</h2>
+      <p class="section-desc">Used for expiry alerts and for sending orders to your supplier.</p>
+      <form id="emailForm">
+        <label>Send alerts to</label>
+        <input type="email" id="to_email" value="askan-campbell@outlook.com" required>
+        <label>Email login</label>
+        <input type="email" id="smtp_user" value="a.skan.campbell.06@gmail.com" required>
+        <label>Password or App Password</label>
+        <div class="password-wrap">
+          <input type="password" id="smtp_password" placeholder="Enter password">
+          <button type="button" class="toggle-pass" id="togglePass">Show</button>
+        </div>
+        <label>SMTP host</label>
+        <input type="text" id="smtp_host" value="smtp.gmail.com">
+        <label>SMTP port</label>
+        <input type="number" id="smtp_port" value="587">
+        <div class="actions">
+          <button type="submit">Save email settings</button>
+          <button type="button" id="testBtn" class="btn-cancel">Send test email</button>
+        </div>
+      </form>
+      <div class="status" id="emailStatus"></div>
+      <div class="note">
+        For Gmail: turn on 2-Step Verification, then create an App Password at
+        <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:var(--accent)">myaccount.google.com/apppasswords</a>
+      </div>
+    </div>
+
+    <div class="settings-box">
+      <h2>Postmix + Gas – target stock levels</h2>
+      <p class="section-desc">These are the amounts you want in total. Ordering page calculates (target − current).</p>
+      <div class="par-grid" id="parGrid"></div>
+      <div class="actions">
+        <button type="button" id="saveParBtn">Save targets</button>
+      </div>
+      <div class="status" id="parStatus"></div>
+    </div>
+
+    <div class="settings-box">
+      <h2>Supplier order email</h2>
+      <p class="section-desc">Use <code style="color:var(--accent)">{{order_list}}</code> where the items should appear.</p>
+      <form id="orderForm">
+        <label>Supplier email address</label>
+        <input type="email" id="supplier_email" placeholder="supplier@example.com">
+        <label>Email subject</label>
+        <input type="text" id="order_email_subject">
+        <label>Email body</label>
+        <textarea id="order_email_body"></textarea>
+        <div class="actions">
+          <button type="submit">Save order template</button>
+        </div>
+      </form>
+      <div class="status" id="orderStatus"></div>
+    </div>
+  </div>
+
+  <script>
+    const PIN = "999906";
+    if (sessionStorage.getItem("asc_unlocked") !== "1") {
+      document.body.innerHTML = '<div style="max-width:320px;margin:4rem auto;text-align:center;font-family:sans-serif;color:#f0f0f5;background:#0f0f12;min-height:100vh;padding:2rem;"><h2>Enter passcode</h2><p style="color:#9a9aa8;">Settings are protected</p><input type="password" id="p" inputmode="numeric" maxlength="8" style="width:100%;text-align:center;font-size:1.4rem;letter-spacing:0.3em;padding:0.7rem;background:#1a1a20;border:1px solid #333;color:#f0f0f5;border-radius:8px;margin:1rem 0;" placeholder="••••••" autocomplete="off"><button id="b" style="width:100%;padding:0.7rem;background:#3ecf8e;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Unlock</button><p id="e" style="color:#e05c5c;display:none;margin-top:0.75rem;">Incorrect passcode</p><p style="margin-top:1.5rem;"><a href="/" style="color:#3ecf8e;">← Back</a></p></div>';
+      const tryP = function() {
+        if (document.getElementById("p").value === PIN) {
+          sessionStorage.setItem("asc_unlocked", "1");
+          location.reload();
+        } else {
+          document.getElementById("e").style.display = "block";
+        }
+      };
+      document.getElementById("b").onclick = tryP;
+      document.getElementById("p").onkeydown = function(ev) { if (ev.key === "Enter") tryP(); };
+      document.getElementById("p").focus();
+    } else {
+      var togglePass = document.getElementById("togglePass");
+      var passInput = document.getElementById("smtp_password");
+      togglePass.addEventListener("click", function() {
+        if (passInput.type === "password") { passInput.type = "text"; togglePass.textContent = "Hide"; }
+        else { passInput.type = "password"; togglePass.textContent = "Show"; }
+      });
+      function showStatus(el, msg, ok) {
+        el.textContent = msg;
+        el.className = "status " + (ok ? "ok" : "err");
+      }
+      document.getElementById("emailForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        var body = {
+          to_email: document.getElementById("to_email").value.trim(),
+          smtp_user: document.getElementById("smtp_user").value.trim(),
+          smtp_password: passInput.value,
+          smtp_host: document.getElementById("smtp_host").value.trim(),
+          smtp_port: document.getElementById("smtp_port").value
+        };
+        var res = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        showStatus(document.getElementById("emailStatus"), res.ok ? "Email settings saved." : "Failed to save.", res.ok);
+        if (res.ok) { passInput.value = ""; passInput.placeholder = "•••••••• (already set)"; passInput.type = "password"; togglePass.textContent = "Show"; }
+      });
+      document.getElementById("testBtn").addEventListener("click", async function() {
+        var pass = passInput.value;
+        if (pass) {
+          await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+            to_email: document.getElementById("to_email").value.trim(),
+            smtp_user: document.getElementById("smtp_user").value.trim(),
+            smtp_password: pass,
+            smtp_host: document.getElementById("smtp_host").value.trim(),
+            smtp_port: document.getElementById("smtp_port").value
+          }) });
+        }
+        var btn = document.getElementById("testBtn");
+        btn.disabled = true; btn.textContent = "Sending…";
+        var res = await fetch("/api/test-email", { method: "POST" });
+        btn.disabled = false; btn.textContent = "Send test email";
+        if (res.ok) showStatus(document.getElementById("emailStatus"), "Test email sent – check inbox/spam.", true);
+        else { var err = await res.json(); showStatus(document.getElementById("emailStatus"), err.error || "Failed.", false); }
+      });
+      async function loadPar() {
+        var res = await fetch("/api/postmix");
+        var rows = await res.json();
+        var grid = document.getElementById("parGrid");
+        grid.innerHTML = "";
+        rows.forEach(function(r) {
+          var label = document.createElement("label"); label.textContent = r.label;
+          var input = document.createElement("input");
+          input.type = "number"; input.min = "0"; input.step = "any"; input.value = r.needed;
+          input.dataset.key = r.key; input.className = "par-input";
+          grid.appendChild(label); grid.appendChild(input);
+        });
+      }
+      document.getElementById("saveParBtn").addEventListener("click", async function() {
+        var currentRes = await fetch("/api/postmix");
+        var currentRows = await currentRes.json();
+        var currentMap = {};
+        currentRows.forEach(function(r) { currentMap[r.key] = r.current; });
+        var payload = {};
+        document.querySelectorAll(".par-input").forEach(function(inp) {
+          payload[inp.dataset.key] = { needed: parseFloat(inp.value) || 0, current: currentMap[inp.dataset.key] || 0 };
+        });
+        var res = await fetch("/api/postmix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        showStatus(document.getElementById("parStatus"), res.ok ? "Targets saved." : "Failed.", res.ok);
+      });
+      async function loadOrderSettings() {
+        var res = await fetch("/api/order-settings");
+        var data = await res.json();
+        document.getElementById("supplier_email").value = data.supplier_email || "";
+        document.getElementById("order_email_subject").value = data.order_email_subject || "";
+        document.getElementById("order_email_body").value = data.order_email_body || "";
+      }
+      document.getElementById("orderForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        var body = {
+          supplier_email: document.getElementById("supplier_email").value.trim(),
+          order_email_subject: document.getElementById("order_email_subject").value,
+          order_email_body: document.getElementById("order_email_body").value
+        };
+        var res = await fetch("/api/order-settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        showStatus(document.getElementById("orderStatus"), res.ok ? "Order template saved." : "Failed.", res.ok);
+      });
+      loadPar();
+      loadOrderSettings();
+    }
+  </script>
+</body>
+</html>

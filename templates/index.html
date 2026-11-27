@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alt-Soundcircus</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Alt-Soundcircus</h1>
+      <p class="subtitle">Pub & Nightclub · <a href="#" id="settingsLink" style="color:#3ecf8e;text-decoration:none;">Settings</a></p>
+    </header>
+
+    <!-- Primary navigation -->
+    <nav class="primary-tabs" id="primaryTabs">
+      <button class="primary-tab active" data-view="stock">Stock Dates</button>
+      <button class="primary-tab" data-view="postmix">Postmix + Gas</button>
+    </nav>
+
+    <!-- ========== STOCK DATES ========== -->
+    <section id="stockView">
+      <nav class="tabs" id="tabs">
+        <button class="tab active" data-location="dashboard">Dashboard</button>
+        <button class="tab" data-location="pub">Pub</button>
+        <button class="tab" data-location="front_left">Front Left</button>
+        <button class="tab" data-location="front_right">Front Right</button>
+        <button class="tab" data-location="back_bar">Back Bar</button>
+        <button class="tab" data-location="all">All Stock</button>
+      </nav>
+
+<section id="dashboardView" style="display:none;">
+      <div class="dash-grid">
+        <div class="dash-card">
+          <div class="dash-label">Total items</div>
+          <div class="dash-value" id="dashTotal">–</div>
+        </div>
+        <div class="dash-card warn">
+          <div class="dash-label">Expiring in 14 days</div>
+          <div class="dash-value" id="dashSoon">–</div>
+        </div>
+        <div class="dash-card danger">
+          <div class="dash-label">Already past date</div>
+          <div class="dash-value" id="dashPast">–</div>
+        </div>
+      </div>
+
+      <div class="dash-grid locations">
+        <div class="dash-card small">
+          <div class="dash-label">Pub</div>
+          <div class="dash-value" id="dashPub">–</div>
+        </div>
+        <div class="dash-card small">
+          <div class="dash-label">Front Left</div>
+          <div class="dash-value" id="dashFrontLeft">–</div>
+        </div>
+        <div class="dash-card small">
+          <div class="dash-label">Front Right</div>
+          <div class="dash-value" id="dashFrontRight">–</div>
+        </div>
+        <div class="dash-card small">
+          <div class="dash-label">Back Bar</div>
+          <div class="dash-value" id="dashBackBar">–</div>
+        </div>
+      </div>
+
+      <section class="table-section" style="margin-top:1.5rem;">
+        <div class="table-header">
+          <h2>Next 10 going out of date</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Location</th>
+                <th>Item</th>
+                <th>Earliest Date</th>
+              </tr>
+            </thead>
+            <tbody id="dashNextBody">
+            </tbody>
+          </table>
+        </div>
+        <p class="empty" id="dashNextEmpty" style="display:none;">No upcoming items.</p>
+      </section>
+    </section>
+
+      <main>
+        <section class="add-form" id="addSection">
+          <h2 id="formTitle">Add to Pub</h2>
+          <form id="addForm">
+            <div class="row">
+              <input type="text" id="itemInput" placeholder="Item name (e.g. Absolut Vodka 70cl)" required autocomplete="off">
+              <input type="text" id="dateInput" placeholder="DD/MM/YY or YYYY-MM-DD" required autocomplete="off">
+              <button type="submit">Add</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="table-section">
+          <div class="table-header">
+            <h2 id="tableTitle">Pub</h2>
+            <div class="sort-controls" id="sortControls" style="display:none;">
+              <label>Sort by:</label>
+              <select id="sortSelect">
+                <option value="date">Earliest date</option>
+                <option value="item">Item name</option>
+                <option value="location">Location</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr id="tableHead">
+                  <th>Item</th>
+                  <th>Earliest Date</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+              </tbody>
+            </table>
+          </div>
+          <p class="empty" id="emptyMsg" style="display:none;">No items yet.</p>
+        </section>
+      </main>
+    </section>
+
+    <!-- ========== POSTMIX + GAS ========== -->
+    <section id="postmixView" style="display:none;">
+      <div class="postmix-intro">
+        <p>Enter <strong>current stock</strong>. The amount to order is calculated from your target levels (set in Settings).</p>
+      </div>
+
+      <section class="table-section">
+        <div class="table-header">
+          <h2>Postmix &amp; Gas</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Current stock</th>
+                <th>Target needed</th>
+                <th>To order</th>
+              </tr>
+            </thead>
+            <tbody id="postmixBody">
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="postmix-actions">
+        <button id="savePostmixBtn">Save current stock</button>
+        <button id="sendOrderBtn" class="btn-order">Email order to supplier</button>
+      </div>
+      <div class="status" id="postmixStatus" style="display:none;margin-top:1rem;"></div>
+      <p class="note" style="margin-top:1rem;">Target levels and the email template are edited in <a href="/settings" style="color:var(--accent);">Settings</a>.</p>
+    </section>
+  </div>
+
+  <!-- Edit modal -->
+  <div class="modal" id="editModal" style="display:none;">
+    <div class="modal-content">
+      <h3>Edit item</h3>
+      <form id="editForm">
+        <input type="hidden" id="editId">
+        <label>Item</label>
+        <input type="text" id="editItem" required>
+        <label>Earliest date</label>
+        <input type="text" id="editDate" placeholder="DD/MM/YY or YYYY-MM-DD" required autocomplete="off">
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="cancelEdit">Cancel</button>
+          <button type="submit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PIN modal -->
+  <div class="modal" id="pinModal" style="display:none;">
+    <div class="modal-content" style="max-width:320px;text-align:center;">
+      <h3 style="margin-bottom:0.75rem;">Enter passcode</h3>
+      <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1rem;">Required for Settings and Postmix ordering</p>
+      <input type="password" id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="8"
+             style="width:100%;text-align:center;font-size:1.4rem;letter-spacing:0.3em;padding:0.7rem;"
+             placeholder="••••••" autocomplete="off">
+      <div class="modal-actions" style="justify-content:center;margin-top:1.2rem;">
+        <button type="button" class="btn-cancel" id="pinCancel">Cancel</button>
+        <button type="button" id="pinSubmit">Unlock</button>
+      </div>
+      <p id="pinError" style="color:var(--danger);font-size:0.85rem;margin-top:0.75rem;display:none;">Incorrect passcode</p>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "to_email": "askan-campbell@outlook.com",
+  "smtp_host": "smtp.gmail.com",
+  "smtp_port": 587,
+  "smtp_user": "a.skan.campbell.06@gmail.com",
+  "smtp_password": "housioqcljgdgtzd",
+  "from_name": "Alt-Soundcircus"
+}
